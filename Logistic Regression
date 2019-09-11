@@ -1,0 +1,53 @@
+getwd();
+cancerdata=read.csv(file.choose())
+str(cancerdata)
+cancerdata=cancerdata[,-1]
+attach(cancerdata)
+diagnosis1=ifelse(diagnosis=="M",1,0)
+detach(cancerdata)
+str(cancerdata)
+cancerdata=cancerdata[,-1]
+cancerdata1=cbind(cancerdata,diagnosis1)
+str(cancerdata1)
+split=sample.split(cancerdata1,SplitRatio = 0.8)
+training=subset(cancerdata1,split=="TRUE")
+testdata=subset(cancerdata1,split=="FALSE")
+fitstart=glm(diagnosis1~1,data = training)
+summary(fitstart)
+fitall=glm(diagnosis1~.,data = training)
+summary(fitall)
+step(fitstart,direction = "forward",scope = formula(fitall))
+#model##
+model=glm(formula = diagnosis1 ~ concave.points_worst + radius_worst + 
+            texture_worst + area_worst + smoothness_se + symmetry_worst + 
+            radius_se + concave.points_se + radius_mean + concavity_mean + 
+            compactness_mean + concavity_se + fractal_dimension_worst, 
+          data = training)
+summary(model)
+premodel=predict(model,testdata,type = "response")
+premodel
+diagnosis2=ifelse(premodel<=0.4,"B","M")
+diagnosis2
+table(diagnosis2)
+###traing data confusion matrix
+premodel1=predict(model,training,data="response")
+premodel1
+table(actualvalue=training$diagnosis1,predictedvalue=premodel1>0.4)
+###testdata confusion matrix
+table(actualvalue=testdata$diagnosis1,predictedvalue=premodel>0.4)
+(79+45)/(127)
+##roc curve
+b=predict(model,training,type = "response")
+ROCRPred=prediction(b,training$diagnosis1)
+ROCRPref=performance(ROCRPred,"tpr","fpr")
+plot(ROCRPref,color="TRUE",print.cutoffs.at=seq(0.1,by=0.1))
+######
+table(actualvalue=training$diagnosis1,predictedvalue=premodel>0.5)
+##plot 
+plot(diagnosis1 ~ concave.points_worst + radius_worst + 
+       texture_worst + area_worst + smoothness_se + symmetry_worst + 
+       radius_se + concave.points_se + radius_mean + concavity_mean + 
+       compactness_mean + concavity_se + fractal_dimension_worst,data=training)
+lines(training$diagnosis1,premodel,col="green",lwd=2)
+str(cancerdata)
+
