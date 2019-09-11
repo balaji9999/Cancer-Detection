@@ -1,0 +1,88 @@
+getwd();
+cancerdata=read.csv(file.choose())
+str(cancerdata)
+cancerdata=cancerdata[,-1]
+attach(cancerdata)
+diagnosis1=ifelse(diagnosis=="M",1,0)
+detach(cancerdata)
+str(cancerdata)
+cancerdata=cancerdata[,-1]
+cancerdata1=cbind(cancerdata,diagnosis1)
+str(cancerdata1)
+##BOXPLOT
+par(mfrow=c(3,6))
+for(i in 1:length(cancerdata1)){
+  boxplot(cancerdata1[,i],main=names(cancerdata1)[i],las=1)
+}
+###HISTOGRAMS
+par(mfrow=c(3,6))
+for(j in 1:length(cancerdata1)){
+  hist(cancerdata1[,j],main = names(cancerdata1)[j],col="green",breaks = 100)
+  rug(cancerdata1[,j])
+  abline(v=mean(cancerdata1[,j],col="red",lwd=4))
+  abline(v=median(cancerdata1[,j],col="magenta",lwd=4))
+}
+####BARPLOT
+barplot(table(diagnosis1),xlab = "diagnosis",ylab = "count",col="magenta",density = 100)
+####CORRELATION PLOTS####
+install.packages("ggplot2")
+install.packages("ggcorrplot")
+library(ggplot2)
+library(ggcorrplot)
+ggcorrplot(cor(cancerdata1),hc.order = TRUE)
+####CORRPLOT###
+library("corrplot")
+cor_cancerdata=cor(cancerdata1[,1:30])
+corrplot(cor_cancerdata,order="hclust",addrect=5)
+corrplot(cor_cancerdata,method = "number")
+####SPLIT DATA PLOTS####
+library(caTools)
+split=sample.split(cancerdata1,SplitRatio = 0.8)
+training=subset(cancerdata1,split=="TRUE")
+testdata=subset(cancerdata1,split=="FALSE")
+###STEP-WISE###
+fitstart=glm(diagnosis1~1,data = training)
+summary(fitstart)
+fitall=glm(diagnosis1~.,data = training)
+summary(fitall)
+step(fitstart,direction = "forward",scope = formula(fitall))
+#model 
+model=glm(formula = diagnosis1 ~ concave.points_worst + radius_worst + 
+            texture_worst + area_worst + smoothness_se + symmetry_worst + 
+            radius_se + concave.points_se + radius_mean + concavity_mean + 
+            compactness_mean + concavity_se + fractal_dimension_worst, 
+          data = training)
+summary(model)
+premodel=predict(model,testdata,type = "response")
+premodel
+diagnosis2=ifelse(premodel<=0.4,"B","M")
+diagnosis2
+table(diagnosis2)
+###traing data confusion matrix####
+premodel1=predict(model,training,data="response")
+premodel1
+table(actualvalue=training$diagnosis1,predictedvalue=premodel1>0.4)
+###testdata confusion matrix###
+table(actualvalue=testdata$diagnosis1,predictedvalue=premodel>0.4)
+(79+45)/(127)
+(84+40)/(84+2+2+40)
+(267+164)/(267+4+6+164)
+##roc curve##
+library("ROCR")
+b=predict(model,training,type = "response")
+ROCRPred=prediction(b,training$diagnosis1)
+ROCRPref=performance(ROCRPred,"tpr","fpr")
+plot(ROCRPref,color="TRUE",print.cutoffs.at=seq(0.1,by=0.1))
+######
+table(actualvalue=training$diagnosis1,predictedvalue=premodel>0.4)
+##plot 
+plot(diagnosis1 ~ concave.points_worst + radius_worst + 
+       texture_worst + area_worst + smoothness_se + symmetry_worst + 
+       radius_se + concave.points_se + radius_mean + concavity_mean + 
+       compactness_mean + concavity_se + fractal_dimension_worst,data=training)
+lines(training$diagnosis1,premodel,col="green",lwd=2)
+str(cancerdata)
+################
+summary(cancerdata1)
+str(cancerdata1)
+
